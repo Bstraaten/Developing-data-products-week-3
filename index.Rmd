@@ -1,0 +1,77 @@
+---
+title: 'Assignment week 3: Plotly'
+author: "B vStraaten"
+date: "March 14, 2018"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r packages, message = FALSE}
+library(plyr)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(readr)
+library(tidyr)
+```
+
+## Data
+The Energy Statistics Database contains comprehensive energy statistics on the production, trade, conversion and final consumption of primary and secondary; conventional and non-conventional; and new and renewable sources of energy.
+
+### Acknowledgements
+This dataset was kindly published by the United Nations Statistics Division on the UNData site and downloaded from Kaggle.
+
+Source: "https://www.kaggle.com/unitednations/international-energy-statistics/downloads/international-energy-statistics.zip/2"
+
+
+```{r data, message = FALSE}
+
+# Needs Kaggle acount
+
+data <- read_csv("C:/Users/602773/Downloads/international-energy-statistics.zip")
+```
+
+## Clean and Filter the data
+This analysis focusses on the developement of the energy mix Germany. Before running the analysis I had to clean and filter the data. See the code below.
+
+```{r europe, echo = TRUE}
+# selecting Germany and former German states
+data$country_or_area <- revalue(data$country_or_area,
+                                 c("German Dem. R. (former)" = "Germany",
+                                   "Germany, Fed. R. (former)" = "Germany"))
+
+data <- filter(data, country_or_area == "Germany") 
+
+# renaming commodity transactions
+data$commodity_transaction <- recode(data$commodity_transaction,
+       'Electricity - total net installed capacity of electric power plants, hydro' = "hydro",
+        'Electricity - total net installed capacity of electric power plants, solar' = "solar",
+        'Electricity - total net installed capacity of electric power plants, geothermal' = "geothermal",
+        'Electricity - total net installed capacity of electric power plants, tide, wave, marine' = "tide_wave_marine",
+        'Electricity - total net installed capacity of electric power plants, wind' = "wind",
+        'Electricity - total net installed capacity of electric power plants, nuclear' = "nuclear",
+       'Electricity - total net installed capacity of electric power plants, combustible fuels' = "combustible_fuels")
+
+# selecting commodity transactions
+scope <- c("hydro", "geothermal", "solar", "tide_wave_marine", "wind", "nuclear", "combustible_fuels")
+
+data <- filter(data, commodity_transaction %in% scope)
+
+```
+
+## Development of the energy mix in Germany
+
+Click on the energy components in the legend to see their individual development, or select multiple components to make comparisons.
+
+```{r plot, message = FALSE, warning = FALSE, out.width = '100%'}
+p1 <- plot_ly(data,
+              x = ~year,
+              y = ~quantity,
+              type = 'bar',
+              color = ~commodity_transaction)  %>%
+        layout(yaxis = list(title = 'Energy Mix (Kilowatts, thousand)'), barmode = 'stack')
+p1
+```
